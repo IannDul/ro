@@ -1,0 +1,9 @@
+string object_uuid
+---
+bool success
+string message
+string object_uuid
+string camera_name
+string image_topic
+sensor_msgs/Image rgb_image
+sensor_msgs/CameraInfo camera_info
