@@ -51,9 +51,9 @@ class CameraSelectorNode(Node):
 
     def _subscribe_to_cameras(self):
         for camera_name in self.camera_names:
-            image_topic = f"/{camera_name}/zed_node/rgb/image_rect_color"
+            image_topic = f"/{camera_name}/zed_node/rgb/color/rect/image"
             pose_topic = f"/{camera_name}/zed_node/pose"
-            camera_info_topic = f"/{camera_name}/zed_node/rgb/camera_info"
+            camera_info_topic = f"/{camera_name}/zed_node/rgb/color/rect/image/camera_info"
 
             self.create_subscription(
                 Image,
@@ -63,13 +63,13 @@ class CameraSelectorNode(Node):
                 callback_group=self.callback_group,
             )
 
-            self.create_subscription(
-                PoseStamped,
-                pose_topic,
-                lambda msg, name=camera_name: self._on_pose(name, msg),
-                qos_profile_sensor_data,
-                callback_group=self.callback_group,
-            )
+            # self.create_subscription(
+            #     PoseStamped,
+            #     pose_topic,
+            #     lambda msg, name=camera_name: self._on_pose(name, msg),
+            #     qos_profile_sensor_data,
+            #     callback_group=self.callback_group,
+            # )
 
             self.create_subscription(
                 CameraInfo,
@@ -106,15 +106,15 @@ class CameraSelectorNode(Node):
         """
 
         center: dict[str, float] = {
-            "x": 0.50,
-            "y": 0.00,
-            "z": 0.80,
+            "x": -0.28,
+            "y": 0.26,
+            "z": 0.05,
         }
 
         bbox_sizes: dict[str, float] = {
-            "x": 0.20,
-            "y": 0.20,
-            "z": 0.30,
+            "x": 0.15,
+            "y": 0.18,
+            "z": 0.09,
         }
 
         rotation: dict[str, float] = {
@@ -191,27 +191,40 @@ class CameraSelectorNode(Node):
 
         for camera_name in self.camera_names:
             image_msg = self.latest_images.get(camera_name)
-            pose_msg = self.latest_poses.get(camera_name)
+            # pose_msg = self.latest_poses.get(camera_name)
             camera_info = self.intrinsics.get(camera_name)
 
-            if image_msg is None or pose_msg is None or camera_info is None:
+            if image_msg is None or camera_info is None:
                 self.get_logger().warning(
                     f"Camera '{camera_name}' missing data, skipping"
                 )
                 continue
+            if camera_name == 'cam0':
+                camera_position: dict[str, float] = {
+                    "x": 0.54866,
+                    "y": 0.2903,
+                    "z": 0.5205,
+                }
 
-            camera_position: dict[str, float] = {
-                "x": pose_msg.pose.position.x,
-                "y": pose_msg.pose.position.y,
-                "z": pose_msg.pose.position.z,
-            }
+                camera_rotation: dict[str, float] = {
+                    "qx": 0.023,
+                    "qy": -0.999,
+                    "qz": 0.0296,
+                    "qw": 0.003,
+                }
+            else:
+                camera_position: dict[str, float] = {
+                    "x": 0.182,
+                    "y": 0.278,
+                    "z": 0.516,
+                }
 
-            camera_rotation: dict[str, float] = {
-                "qx": pose_msg.pose.orientation.x,
-                "qy": pose_msg.pose.orientation.y,
-                "qz": pose_msg.pose.orientation.z,
-                "qw": pose_msg.pose.orientation.w,
-            }
+                camera_rotation: dict[str, float] = {
+                    "qx": -0.0005,
+                    "qy": -0.999,
+                    "qz": 0.007,
+                    "qw": 0.0003,
+                }
 
             intrinsics: dict[str, float] = {
                 "fx": camera_info.k[0],
@@ -229,6 +242,9 @@ class CameraSelectorNode(Node):
                 intrinsics=intrinsics,
                 camera_position=camera_position,
                 camera_rotation=camera_rotation,
+            )
+            self.get_logger().warning(
+                f"Camera '{camera_name}': {str(score)}"
             )
 
             if score > best_score:
