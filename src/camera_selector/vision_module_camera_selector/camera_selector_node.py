@@ -4,6 +4,7 @@ from datetime import datetime
 
 import cv2
 import numpy as np
+import time
 from cv_bridge import CvBridge
 
 import rclpy
@@ -449,6 +450,7 @@ class CameraSelectorNode(Node):
 
         # Новый вариант: bbox объекта не запрашивается,
         # а берётся из захардкоженных данных.
+        start_time = time.time()
         center, bbox_sizes, rotation = self._get_hardcoded_object_data()
 
         best_camera = None
@@ -515,6 +517,8 @@ class CameraSelectorNode(Node):
         response.image_topic = f"/{best_camera}/zed_node/rgb/color/rect/image"
         response.rgb_image = self.latest_images[best_camera]
         response.camera_info = self.intrinsics[best_camera]
+
+	self.get_logger().warning(f'From call to ready response: {time.time() - start_time} secs')
 
         saved_image_path = None
 
